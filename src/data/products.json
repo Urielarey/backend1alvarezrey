@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "991bcce0-9960-4dde-b891-a997a0b97c93",
+    "title": "Auriculares ",
+    "description": "Auriculares Philco in-ear",
+    "code": "1234",
+    "price": 10000,
+    "status": true,
+    "stock": 5,
+    "category": "Audio",
+    "thumbnails": []
+  }
+]

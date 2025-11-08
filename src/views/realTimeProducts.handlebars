@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Productos en Tiempo Real</title>
+	<script src="/socket.io/socket.io.js"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.container {
+			max-width: 1400px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+			padding: 30px;
+		}
+		h1 {
+			color: #333;
+			margin-bottom: 30px;
+			text-align: center;
+			font-size: 2.5em;
+		}
+		.nav {
+			margin-bottom: 30px;
+			text-align: center;
+		}
+		.nav a {
+			display: inline-block;
+			padding: 10px 20px;
+			background: #667eea;
+			color: white;
+			text-decoration: none;
+			border-radius: 5px;
+			margin: 0 10px;
+			transition: background 0.3s;
+		}
+		.nav a:hover {
+			background: #764ba2;
+		}
+		.content-wrapper {
+			display: grid;
+			grid-template-columns: 1fr 2fr;
+			gap: 30px;
+		}
+		.form-section {
+			background: #f9f9f9;
+			padding: 20px;
+			border-radius: 8px;
+			border: 1px solid #ddd;
+		}
+		.form-section h2 {
+			margin-bottom: 20px;
+			color: #333;
+		}
+		.form-group {
+			margin-bottom: 15px;
+		}
+		.form-group label {
+			display: block;
+			margin-bottom: 5px;
+			color: #555;
+			font-weight: 500;
+		}
+		.form-group input,
+		.form-group select {
+			width: 100%;
+			padding: 10px;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+			font-size: 1em;
+		}
+		.btn {
+			padding: 12px 24px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 1em;
+			transition: background 0.3s;
+		}
+		.btn-primary {
+			background: #667eea;
+			color: white;
+		}
+		.btn-primary:hover {
+			background: #764ba2;
+		}
+		.btn-danger {
+			background: #e74c3c;
+			color: white;
+		}
+		.btn-danger:hover {
+			background: #c0392b;
+		}
+		.products-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+			gap: 20px;
+		}
+		.product-card {
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 20px;
+			background: #f9f9f9;
+			transition: transform 0.3s, box-shadow 0.3s;
+			position: relative;
+		}
+		.product-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+		}
+		.product-title {
+			font-size: 1.3em;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 10px;
+		}
+		.product-info {
+			margin: 8px 0;
+			color: #666;
+		}
+		.product-price {
+			font-size: 1.5em;
+			color: #667eea;
+			font-weight: bold;
+			margin-top: 10px;
+		}
+		.product-id {
+			font-size: 0.85em;
+			color: #999;
+			margin-top: 10px;
+		}
+		.delete-btn {
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			padding: 5px 10px;
+			font-size: 0.8em;
+		}
+		.no-products {
+			text-align: center;
+			padding: 40px;
+			color: #999;
+			font-size: 1.2em;
+		}
+		.message {
+			padding: 10px;
+			margin-bottom: 15px;
+			border-radius: 5px;
+			text-align: center;
+		}
+		.message.success {
+			background: #d4edda;
+			color: #155724;
+			border: 1px solid #c3e6cb;
+		}
+		.message.error {
+			background: #f8d7da;
+			color: #721c24;
+			border: 1px solid #f5c6cb;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Productos en Tiempo Real</h1>
+		<nav class="nav">
+			<a href="/">Home</a>
+			<a href="/realtimeproducts">Productos en Tiempo Real</a>
+		</nav>
+		<div class="content-wrapper">
+			<div class="form-section">
+				<h2>Agregar Producto</h2>
+				<div id="message"></div>
+				<form id="productForm">
+					<div class="form-group">
+						<label for="title">Título *</label>
+						<input type="text" id="title" name="title" required>
+					</div>
+					<div class="form-group">
+						<label for="description">Descripción *</label>
+						<input type="text" id="description" name="description" required>
+					</div>
+					<div class="form-group">
+						<label for="code">Código *</label>
+						<input type="text" id="code" name="code" required>
+					</div>
+					<div class="form-group">
+						<label for="price">Precio *</label>
+						<input type="number" id="price" name="price" step="0.01" required>
+					</div>
+					<div class="form-group">
+						<label for="stock">Stock *</label>
+						<input type="number" id="stock" name="stock" required>
+					</div>
+					<div class="form-group">
+						<label for="category">Categoría *</label>
+						<input type="text" id="category" name="category" required>
+					</div>
+					<div class="form-group">
+						<label for="status">Estado</label>
+						<select id="status" name="status">
+							<option value="true">Disponible</option>
+							<option value="false">No disponible</option>
+						</select>
+					</div>
+					<button type="submit" class="btn btn-primary">Agregar Producto</button>
+				</form>
+			</div>
+			<div>
+				<h2 style="margin-bottom: 20px; color: #333;">Lista de Productos</h2>
+				<div id="productsContainer" class="products-grid">
+					{{#if products.length}}
+						{{#each products}}
+							<div class="product-card" data-id="{{this.id}}">
+								<button class="btn btn-danger delete-btn" onclick="deleteProduct('{{this.id}}')">Eliminar</button>
+								<div class="product-title">{{this.title}}</div>
+								<div class="product-info"><strong>Descripción:</strong> {{this.description}}</div>
+								<div class="product-info"><strong>Código:</strong> {{this.code}}</div>
+								<div class="product-info"><strong>Categoría:</strong> {{this.category}}</div>
+								<div class="product-info"><strong>Stock:</strong> {{this.stock}}</div>
+								<div class="product-info"><strong>Estado:</strong> {{#if this.status}}Disponible{{else}}No disponible{{/if}}</div>
+								<div class="product-price">${{this.price}}</div>
+								<div class="product-id">ID: {{this.id}}</div>
+							</div>
+						{{/each}}
+					{{else}}
+						<div class="no-products">No hay productos disponibles</div>
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const socket = io();
+
+		// Manejar actualización de productos
+		socket.on('updateProducts', (products) => {
+			const container = document.getElementById('productsContainer');
+			if (products.length === 0) {
+				container.innerHTML = '<div class="no-products">No hay productos disponibles</div>';
+				return;
+			}
+			container.innerHTML = products.map(product => `
+				<div class="product-card" data-id="${product.id}">
+					<button class="btn btn-danger delete-btn" onclick="deleteProduct('${product.id}')">Eliminar</button>
+					<div class="product-title">${product.title}</div>
+					<div class="product-info"><strong>Descripción:</strong> ${product.description}</div>
+					<div class="product-info"><strong>Código:</strong> ${product.code}</div>
+					<div class="product-info"><strong>Categoría:</strong> ${product.category}</div>
+					<div class="product-info"><strong>Stock:</strong> ${product.stock}</div>
+					<div class="product-info"><strong>Estado:</strong> ${product.status ? 'Disponible' : 'No disponible'}</div>
+					<div class="product-price">$${product.price}</div>
+					<div class="product-id">ID: ${product.id}</div>
+				</div>
+			`).join('');
+		});
+
+		// Manejar formulario de creación
+		document.getElementById('productForm').addEventListener('submit', async (e) => {
+			e.preventDefault();
+			const formData = new FormData(e.target);
+			const product = {
+				title: formData.get('title'),
+				description: formData.get('description'),
+				code: formData.get('code'),
+				price: parseFloat(formData.get('price')),
+				stock: parseInt(formData.get('stock')),
+				category: formData.get('category'),
+				status: formData.get('status') === 'true'
+			};
+
+			try {
+				const response = await fetch('/api/products', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(product)
+				});
+
+				if (response.ok) {
+					showMessage('Producto agregado correctamente', 'success');
+					e.target.reset();
+				} else {
+					const error = await response.json();
+					showMessage(error.error || 'Error al agregar producto', 'error');
+				}
+			} catch (error) {
+				showMessage('Error al agregar producto', 'error');
+			}
+		});
+
+		// Función para eliminar producto
+		async function deleteProduct(id) {
+			if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+				return;
+			}
+
+			try {
+				const response = await fetch(`/api/products/${id}`, {
+					method: 'DELETE'
+				});
+
+				if (response.ok) {
+					showMessage('Producto eliminado correctamente', 'success');
+				} else {
+					const error = await response.json();
+					showMessage(error.error || 'Error al eliminar producto', 'error');
+				}
+			} catch (error) {
+				showMessage('Error al eliminar producto', 'error');
+			}
+		}
+
+		// Función para mostrar mensajes
+		function showMessage(message, type) {
+			const messageDiv = document.getElementById('message');
+			messageDiv.textContent = message;
+			messageDiv.className = `message ${type}`;
+			setTimeout(() => {
+				messageDiv.textContent = '';
+				messageDiv.className = '';
+			}, 3000);
+		}
+	</script>
+</body>
+</html>
+

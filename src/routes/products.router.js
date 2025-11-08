@@ -35,6 +35,14 @@ router.post('/', async (req, res, next) => {
 	try {
 		const { title, description, code, price, status, stock, category, thumbnails } = req.body;
 		const newProduct = await productManager.addProduct({ title, description, code, price, status, stock, category, thumbnails });
+		
+		// Emitir evento de Socket.io para actualizar productos en tiempo real
+		const io = req.app.get('io');
+		if (io) {
+			const products = await productManager.getProducts();
+			io.emit('updateProducts', products);
+		}
+		
 		res.status(201).json(newProduct);
 	} catch (err) {
 		next(err);
@@ -65,6 +73,14 @@ router.delete('/:pid', async (req, res, next) => {
 		if (!removed) {
 			return res.status(404).json({ error: 'Producto no encontrado' });
 		}
+		
+		// Emitir evento de Socket.io para actualizar productos en tiempo real
+		const io = req.app.get('io');
+		if (io) {
+			const products = await productManager.getProducts();
+			io.emit('updateProducts', products);
+		}
+		
 		res.json({ status: 'deleted' });
 	} catch (err) {
 		next(err);

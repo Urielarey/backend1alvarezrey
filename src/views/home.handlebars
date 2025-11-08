@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Lista de Productos</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+			padding: 30px;
+		}
+		h1 {
+			color: #333;
+			margin-bottom: 30px;
+			text-align: center;
+			font-size: 2.5em;
+		}
+		.nav {
+			margin-bottom: 30px;
+			text-align: center;
+		}
+		.nav a {
+			display: inline-block;
+			padding: 10px 20px;
+			background: #667eea;
+			color: white;
+			text-decoration: none;
+			border-radius: 5px;
+			margin: 0 10px;
+			transition: background 0.3s;
+		}
+		.nav a:hover {
+			background: #764ba2;
+		}
+		.products-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+			gap: 20px;
+		}
+		.product-card {
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			padding: 20px;
+			background: #f9f9f9;
+			transition: transform 0.3s, box-shadow 0.3s;
+		}
+		.product-card:hover {
+			transform: translateY(-5px);
+			box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+		}
+		.product-title {
+			font-size: 1.3em;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 10px;
+		}
+		.product-info {
+			margin: 8px 0;
+			color: #666;
+		}
+		.product-price {
+			font-size: 1.5em;
+			color: #667eea;
+			font-weight: bold;
+			margin-top: 10px;
+		}
+		.product-id {
+			font-size: 0.85em;
+			color: #999;
+			margin-top: 10px;
+		}
+		.no-products {
+			text-align: center;
+			padding: 40px;
+			color: #999;
+			font-size: 1.2em;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Lista de Productos</h1>
+		<nav class="nav">
+			<a href="/">Home</a>
+			<a href="/realtimeproducts">Productos en Tiempo Real</a>
+		</nav>
+		{{#if products.length}}
+			<div class="products-grid">
+				{{#each products}}
+					<div class="product-card">
+						<div class="product-title">{{this.title}}</div>
+						<div class="product-info"><strong>Descripción:</strong> {{this.description}}</div>
+						<div class="product-info"><strong>Código:</strong> {{this.code}}</div>
+						<div class="product-info"><strong>Categoría:</strong> {{this.category}}</div>
+						<div class="product-info"><strong>Stock:</strong> {{this.stock}}</div>
+						<div class="product-info"><strong>Estado:</strong> {{#if this.status}}Disponible{{else}}No disponible{{/if}}</div>
+						<div class="product-price">${{this.price}}</div>
+						<div class="product-id">ID: {{this.id}}</div>
+					</div>
+				{{/each}}
+			</div>
+		{{else}}
+			<div class="no-products">No hay productos disponibles</div>
+		{{/if}}
+	</div>
+</body>
+</html>
+
