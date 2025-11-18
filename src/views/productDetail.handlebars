@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{product.title}}</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background: #000000;
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.container {
+			max-width: 1000px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+			padding: 30px;
+		}
+		h1 {
+			color: #333;
+			margin-bottom: 30px;
+			text-align: center;
+			font-size: 2.5em;
+		}
+		.nav {
+			margin-bottom: 30px;
+			text-align: center;
+		}
+		.nav a {
+			display: inline-block;
+			padding: 10px 20px;
+			background: #000000;
+			color: white;
+			text-decoration: none;
+			border-radius: 5px;
+			border: 2px solid white;
+			margin: 0 10px;
+			transition: background 0.3s;
+		}
+		.nav a:hover {
+			background: white;
+			color: black;
+		}
+		.product-detail {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 30px;
+			margin-bottom: 30px;
+		}
+		.product-image {
+			background: #f9f9f9;
+			border-radius: 8px;
+			padding: 20px;
+			text-align: center;
+		}
+		.product-image img {
+			max-width: 100%;
+			border-radius: 8px;
+		}
+		.product-info {
+			padding: 20px;
+		}
+		.product-title {
+			font-size: 2em;
+			font-weight: bold;
+			color: #333;
+			margin-bottom: 20px;
+		}
+		.product-price {
+			font-size: 2.5em;
+			color: #000000;
+			font-weight: bold;
+			margin: 20px 0;
+		}
+		.info-item {
+			margin: 15px 0;
+			padding: 10px;
+			background: #f9f9f9;
+			border-radius: 5px;
+		}
+		.info-item strong {
+			color: #555;
+		}
+		.description {
+			margin-top: 20px;
+			padding: 20px;
+			background: #f9f9f9;
+			border-radius: 8px;
+			line-height: 1.6;
+		}
+		.btn {
+			padding: 15px 30px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 1.1em;
+			transition: background 0.3s;
+			margin-top: 20px;
+			width: 100%;
+		}
+		.btn-success {
+			background: #000000;
+			color: white;
+			border: 2px solid white;
+		}
+		.btn-success:hover {
+			background: white;
+			color: black;
+		}
+		.status-badge {
+			display: inline-block;
+			padding: 5px 15px;
+			border-radius: 20px;
+			font-size: 0.9em;
+			font-weight: bold;
+		}
+		.status-available {
+			background: white;
+			color: black;
+			border: 2px solid black;
+		}
+		.status-unavailable {
+			background: black;
+			color: white;
+			border: 2px solid white;
+		}
+		@media (max-width: 768px) {
+			.product-detail {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Detalle del Producto</h1>
+		<nav class="nav">
+			<a href="/products">Volver a Productos</a>
+			<a href="/">Home</a>
+		</nav>
+
+		<div class="product-detail">
+			<div class="product-image">
+				{{#if product.thumbnails.length}}
+					<img src="{{product.thumbnails.[0]}}" alt="{{product.title}}">
+				{{else}}
+					<div style="padding: 100px; color: #999;">Sin imagen</div>
+				{{/if}}
+			</div>
+			<div class="product-info">
+				<div class="product-title">{{product.title}}</div>
+				<div class="product-price">${{product.price}}</div>
+				
+				<div class="info-item">
+					<strong>Código:</strong> {{product.code}}
+				</div>
+				<div class="info-item">
+					<strong>Categoría:</strong> {{product.category}}
+				</div>
+				<div class="info-item">
+					<strong>Stock disponible:</strong> {{product.stock}} unidades
+				</div>
+				<div class="info-item">
+					<strong>Estado:</strong> 
+					<span class="status-badge {{#if product.status}}status-available{{else}}status-unavailable{{/if}}">
+						{{#if product.status}}Disponible{{else}}No disponible{{/if}}
+					</span>
+				</div>
+				<div class="info-item">
+					<strong>ID:</strong> {{product._id}}
+				</div>
+
+				<button onclick="addToCart('{{product._id}}')" class="btn btn-success">
+					Agregar al Carrito
+				</button>
+			</div>
+		</div>
+
+		<div class="description">
+			<h2>Descripción</h2>
+			<p>{{product.description}}</p>
+		</div>
+	</div>
+
+	<script>
+		async function addToCart(productId) {
+			try {
+				let cartId = localStorage.getItem('cartId');
+				
+				if (!cartId) {
+					const response = await fetch('/api/carts', {
+						method: 'POST'
+					});
+					const cart = await response.json();
+					cartId = cart._id;
+					localStorage.setItem('cartId', cartId);
+				}
+
+				const addResponse = await fetch(`/api/carts/${cartId}/product/${productId}`, {
+					method: 'POST'
+				});
+
+				if (addResponse.ok) {
+					alert('Producto agregado al carrito');
+					window.location.href = `/carts/${cartId}`;
+				} else {
+					alert('Error al agregar producto al carrito');
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				alert('Error al agregar producto al carrito');
+			}
+		}
+	</script>
+</body>
+</html>
+

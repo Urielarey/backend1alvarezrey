@@ -1,16 +1,21 @@
 const { Router } = require('express');
-const path = require('path');
 const ProductManager = require('../managers/ProductManager');
 
 const router = Router();
-const dataPath = path.join(__dirname, '..', 'data', 'products.json');
-const productManager = new ProductManager(dataPath);
+const productManager = new ProductManager();
 
 // GET /api/products/
 router.get('/', async (req, res, next) => {
 	try {
-		const products = await productManager.getProducts();
-		res.json(products);
+		const { limit, page, sort, query } = req.query;
+		const filters = {
+			limit: limit ? parseInt(limit) : 10,
+			page: page ? parseInt(page) : 1,
+			sort: sort || null,
+			query: query || null
+		};
+		const result = await productManager.getProducts(filters);
+		res.json(result);
 	} catch (err) {
 		next(err);
 	}
@@ -39,8 +44,8 @@ router.post('/', async (req, res, next) => {
 		// Emitir evento de Socket.io para actualizar productos en tiempo real
 		const io = req.app.get('io');
 		if (io) {
-			const products = await productManager.getProducts();
-			io.emit('updateProducts', products);
+			const result = await productManager.getProducts({ limit: 100, page: 1 });
+			io.emit('updateProducts', result.payload);
 		}
 		
 		res.status(201).json(newProduct);
@@ -77,8 +82,8 @@ router.delete('/:pid', async (req, res, next) => {
 		// Emitir evento de Socket.io para actualizar productos en tiempo real
 		const io = req.app.get('io');
 		if (io) {
-			const products = await productManager.getProducts();
-			io.emit('updateProducts', products);
+			const result = await productManager.getProducts({ limit: 100, page: 1 });
+			io.emit('updateProducts', result.payload);
 		}
 		
 		res.json({ status: 'deleted' });

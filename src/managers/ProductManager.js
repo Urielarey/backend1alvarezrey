@@ -1,38 +1,96 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { randomUUID } = require('crypto');
+const Product = require('../models/Product');
 
 class ProductManager {
-	constructor(filePath) {
-		this.filePath = filePath;
-	}
-
-	async #readFile() {
-		try {
-			const data = await fs.readFile(this.filePath, 'utf-8');
-			return JSON.parse(data || '[]');
-		} catch (err) {
-			if (err.code === 'ENOENT') return [];
-			throw err;
+	async getProducts(filters = {}) {
+		const { limit = 10, page = 1, sort, query } = filters;
+		
+		// Construir filtro de búsqueda
+		const filter = {};
+		if (query) {
+			// Buscar por categoría o disponibilidad
+			if (query === 'available' || query === 'disponible') {
+				filter.status = true;
+				filter.stock = { $gt: 0 };
+			} else if (query === 'unavailable' || query === 'no-disponible') {
+				filter.$or = [
+					{ status: false },
+					{ stock: 0 }
+				];
+			} else {
+				// Buscar por categoría
+				filter.category = { $regex: query, $options: 'i' };
+			}
 		}
-	}
 
-	async #writeFile(items) {
-		await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-		await fs.writeFile(this.filePath, JSON.stringify(items, null, 2), 'utf-8');
-	}
+		// Construir ordenamiento
+		let sortOption = {};
+		if (sort === 'asc') {
+			sortOption = { price: 1 };
+		} else if (sort === 'desc') {
+			sortOption = { price: -1 };
+		}
 
-	async getProducts() {
-		return await this.#readFile();
+		// Calcular paginación
+		const skip = (page - 1) * limit;
+		
+		// Obtener productos con paginación
+		const products = await Product.find(filter)
+			.sort(sortOption)
+			.skip(skip)
+			.limit(limit)
+			.lean();
+
+		// Obtener total de documentos
+		const totalDocs = await Product.countDocuments(filter);
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		// Construir respuesta con paginación
+		const hasPrevPage = page > 1;
+		const hasNextPage = page < totalPages;
+		const prevPage = hasPrevPage ? page - 1 : null;
+		const nextPage = hasNextPage ? page + 1 : null;
+
+		// Construir links (para vistas usar /products, para API usar /api/products)
+		const isView = filters.isView || false;
+		const endpoint = isView ? '/products' : '/api/products';
+		const baseUrl = process.env.BASE_URL || '';
+		const queryParams = new URLSearchParams();
+		if (limit !== 10) queryParams.set('limit', limit);
+		if (query) queryParams.set('query', query);
+		if (sort) queryParams.set('sort', sort);
+		
+		const prevLink = hasPrevPage 
+			? `${baseUrl}${endpoint}?${queryParams.toString()}&page=${prevPage}`
+			: null;
+		const nextLink = hasNextPage
+			? `${baseUrl}${endpoint}?${queryParams.toString()}&page=${nextPage}`
+			: null;
+
+		return {
+			status: 'success',
+			payload: products,
+			totalPages,
+			prevPage,
+			nextPage,
+			page: parseInt(page),
+			hasPrevPage,
+			hasNextPage,
+			prevLink,
+			nextLink
+		};
 	}
 
 	async getProductById(id) {
-		const items = await this.#readFile();
-		return items.find(p => String(p.id) === String(id));
+		try {
+			const product = await Product.findById(id).lean();
+			return product;
+		} catch (error) {
+			return null;
+		}
 	}
 
 	async addProduct(product) {
-		const required = ['title','description','code','price','status','stock','category'];
+		const required = ['title', 'description', 'code', 'price', 'status', 'stock', 'category'];
 		for (const key of required) {
 			if (product[key] === undefined) {
 				const err = new Error(`Campo requerido faltante: ${key}`);
@@ -41,15 +99,15 @@ class ProductManager {
 			}
 		}
 
-		const items = await this.#readFile();
-		if (items.some(p => p.code === product.code)) {
+		// Verificar si el código ya existe
+		const existing = await Product.findOne({ code: product.code });
+		if (existing) {
 			const err = new Error('El code del producto ya existe');
 			err.status = 400;
 			throw err;
 		}
 
-		const newItem = {
-			id: randomUUID(),
+		const newProduct = new Product({
 			title: String(product.title),
 			description: String(product.description),
 			code: String(product.code),
@@ -58,42 +116,36 @@ class ProductManager {
 			stock: Number(product.stock),
 			category: String(product.category),
 			thumbnails: Array.isArray(product.thumbnails) ? product.thumbnails.map(String) : []
-		};
-		items.push(newItem);
-		await this.#writeFile(items);
-		return newItem;
+		});
+
+		await newProduct.save();
+		return newProduct.toObject();
 	}
 
 	async updateProduct(id, updates) {
-		const items = await this.#readFile();
-		const index = items.findIndex(p => String(p.id) === String(id));
-		if (index === -1) return null;
+		const allowed = ['title', 'description', 'code', 'price', 'status', 'stock', 'category', 'thumbnails'];
+		const updateData = {};
 
-		const current = items[index];
-		const allowed = ['title','description','code','price','status','stock','category','thumbnails'];
 		for (const key of Object.keys(updates)) {
 			if (!allowed.includes(key)) continue;
 			if (key === 'thumbnails') {
-				items[index][key] = Array.isArray(updates[key]) ? updates[key].map(String) : current[key];
-			} else if (['price','stock'].includes(key)) {
-				items[index][key] = Number(updates[key]);
+				updateData[key] = Array.isArray(updates[key]) ? updates[key].map(String) : updates[key];
+			} else if (['price', 'stock'].includes(key)) {
+				updateData[key] = Number(updates[key]);
 			} else if (key === 'status') {
-				items[index][key] = Boolean(updates[key]);
+				updateData[key] = Boolean(updates[key]);
 			} else {
-				items[index][key] = String(updates[key]);
+				updateData[key] = String(updates[key]);
 			}
 		}
-		await this.#writeFile(items);
-		return items[index];
+
+		const updated = await Product.findByIdAndUpdate(id, updateData, { new: true }).lean();
+		return updated;
 	}
 
 	async deleteProduct(id) {
-		const items = await this.#readFile();
-		const index = items.findIndex(p => String(p.id) === String(id));
-		if (index === -1) return false;
-		items.splice(index, 1);
-		await this.#writeFile(items);
-		return true;
+		const result = await Product.findByIdAndDelete(id);
+		return result !== null;
 	}
 }
 

@@ -12,7 +12,7 @@
 		}
 		body {
 			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			background: #000000;
 			min-height: 100vh;
 			padding: 20px;
 		}
@@ -37,15 +37,17 @@
 		.nav a {
 			display: inline-block;
 			padding: 10px 20px;
-			background: #667eea;
+			background: #000000;
 			color: white;
 			text-decoration: none;
 			border-radius: 5px;
+			border: 2px solid white;
 			margin: 0 10px;
 			transition: background 0.3s;
 		}
 		.nav a:hover {
-			background: #764ba2;
+			background: white;
+			color: black;
 		}
 		.products-grid {
 			display: grid;
@@ -75,7 +77,7 @@
 		}
 		.product-price {
 			font-size: 1.5em;
-			color: #667eea;
+			color: #000000;
 			font-weight: bold;
 			margin-top: 10px;
 		}
@@ -97,6 +99,7 @@
 		<h1>Lista de Productos</h1>
 		<nav class="nav">
 			<a href="/">Home</a>
+			<a href="/products">Productos</a>
 			<a href="/realtimeproducts">Productos en Tiempo Real</a>
 		</nav>
 		{{#if products.length}}

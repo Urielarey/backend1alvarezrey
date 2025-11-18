@@ -13,7 +13,7 @@
 		}
 		body {
 			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			background: #000000;
 			min-height: 100vh;
 			padding: 20px;
 		}
@@ -38,15 +38,17 @@
 		.nav a {
 			display: inline-block;
 			padding: 10px 20px;
-			background: #667eea;
+			background: #000000;
 			color: white;
 			text-decoration: none;
 			border-radius: 5px;
+			border: 2px solid white;
 			margin: 0 10px;
 			transition: background 0.3s;
 		}
 		.nav a:hover {
-			background: #764ba2;
+			background: white;
+			color: black;
 		}
 		.content-wrapper {
 			display: grid;
@@ -89,18 +91,22 @@
 			transition: background 0.3s;
 		}
 		.btn-primary {
-			background: #667eea;
+			background: #000000;
 			color: white;
+			border: 2px solid white;
 		}
 		.btn-primary:hover {
-			background: #764ba2;
+			background: white;
+			color: black;
 		}
 		.btn-danger {
-			background: #e74c3c;
+			background: #000000;
 			color: white;
+			border: 2px solid white;
 		}
 		.btn-danger:hover {
-			background: #c0392b;
+			background: white;
+			color: black;
 		}
 		.products-grid {
 			display: grid;
@@ -131,7 +137,7 @@
 		}
 		.product-price {
 			font-size: 1.5em;
-			color: #667eea;
+			color: #000000;
 			font-weight: bold;
 			margin-top: 10px;
 		}
@@ -160,14 +166,14 @@
 			text-align: center;
 		}
 		.message.success {
-			background: #d4edda;
-			color: #155724;
-			border: 1px solid #c3e6cb;
+			background: white;
+			color: black;
+			border: 2px solid black;
 		}
 		.message.error {
-			background: #f8d7da;
-			color: #721c24;
-			border: 1px solid #f5c6cb;
+			background: black;
+			color: white;
+			border: 2px solid white;
 		}
 	</style>
 </head>
@@ -176,6 +182,7 @@
 		<h1>Productos en Tiempo Real</h1>
 		<nav class="nav">
 			<a href="/">Home</a>
+			<a href="/products">Productos</a>
 			<a href="/realtimeproducts">Productos en Tiempo Real</a>
 		</nav>
 		<div class="content-wrapper">

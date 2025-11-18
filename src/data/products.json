@@ -9,5 +9,16 @@
     "stock": 5,
     "category": "Audio",
     "thumbnails": []
+  },
+  {
+    "id": "f49fa0d7-4299-4e31-8f16-aebe904f637d",
+    "title": "Celular A06",
+    "description": "Celular Samsung",
+    "code": "213426",
+    "price": 400000,
+    "status": true,
+    "stock": 3,
+    "category": "Celulares",
+    "thumbnails": []
   }
 ]

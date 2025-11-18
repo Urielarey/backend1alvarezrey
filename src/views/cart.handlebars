@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Carrito de Compras</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			background: #000000;
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.container {
+			max-width: 1200px;
+			margin: 0 auto;
+			background: white;
+			border-radius: 10px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+			padding: 30px;
+		}
+		h1 {
+			color: #333;
+			margin-bottom: 30px;
+			text-align: center;
+			font-size: 2.5em;
+		}
+		.nav {
+			margin-bottom: 30px;
+			text-align: center;
+		}
+		.nav a {
+			display: inline-block;
+			padding: 10px 20px;
+			background: #000000;
+			color: white;
+			text-decoration: none;
+			border-radius: 5px;
+			border: 2px solid white;
+			margin: 0 10px;
+			transition: background 0.3s;
+		}
+		.nav a:hover {
+			background: white;
+			color: black;
+		}
+		.cart-items {
+			margin-bottom: 30px;
+		}
+		.cart-item {
+			display: grid;
+			grid-template-columns: 2fr 1fr 1fr 1fr auto;
+			gap: 20px;
+			align-items: center;
+			padding: 20px;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			margin-bottom: 15px;
+			background: #f9f9f9;
+		}
+		.item-info h3 {
+			color: #333;
+			margin-bottom: 5px;
+		}
+		.item-info p {
+			color: #666;
+			font-size: 0.9em;
+		}
+		.item-quantity {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		.quantity-input {
+			width: 60px;
+			padding: 5px;
+			text-align: center;
+			border: 1px solid #ddd;
+			border-radius: 5px;
+		}
+		.item-price {
+			font-size: 1.2em;
+			font-weight: bold;
+			color: #000000;
+		}
+		.item-total {
+			font-size: 1.3em;
+			font-weight: bold;
+			color: #333;
+		}
+		.btn {
+			padding: 8px 16px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 0.9em;
+			transition: background 0.3s;
+		}
+		.btn-danger {
+			background: #000000;
+			color: white;
+			border: 2px solid white;
+		}
+		.btn-danger:hover {
+			background: white;
+			color: black;
+		}
+		.btn-primary {
+			background: #000000;
+			color: white;
+			border: 2px solid white;
+		}
+		.btn-primary:hover {
+			background: white;
+			color: black;
+		}
+		.cart-summary {
+			background: #f9f9f9;
+			padding: 20px;
+			border-radius: 8px;
+			margin-top: 30px;
+		}
+		.summary-row {
+			display: flex;
+			justify-content: space-between;
+			margin: 10px 0;
+			font-size: 1.1em;
+		}
+		.summary-total {
+			font-size: 1.5em;
+			font-weight: bold;
+			color: #000000;
+			border-top: 2px solid #000000;
+			padding-top: 10px;
+			margin-top: 10px;
+		}
+		.empty-cart {
+			text-align: center;
+			padding: 60px;
+			color: #999;
+			font-size: 1.3em;
+		}
+		@media (max-width: 768px) {
+			.cart-item {
+				grid-template-columns: 1fr;
+				gap: 10px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<h1>Carrito de Compras</h1>
+		<nav class="nav">
+			<a href="/products">Seguir Comprando</a>
+			<a href="/">Home</a>
+		</nav>
+
+		{{#if cart.products.length}}
+			<div class="cart-items">
+				{{#each cart.products}}
+					{{#if this.product}}
+						<div class="cart-item" data-product-id="{{this.product._id}}">
+							<div class="item-info">
+								<h3>{{this.product.title}}</h3>
+								<p>{{this.product.description}}</p>
+								<p><strong>Categoría:</strong> {{this.product.category}}</p>
+							</div>
+							<div class="item-quantity">
+								<label>Cantidad:</label>
+								<input type="number" 
+									   class="quantity-input" 
+									   value="{{this.quantity}}" 
+									   min="1"
+									   onchange="updateQuantity('{{this.product._id}}', this.value)">
+							</div>
+							<div class="item-price">
+								${{this.product.price}} c/u
+							</div>
+							<div class="item-total">
+								${{multiply this.product.price this.quantity}}
+							</div>
+							<button class="btn btn-danger" onclick="removeProduct('{{this.product._id}}')">
+								Eliminar
+							</button>
+						</div>
+					{{/if}}
+				{{/each}}
+			</div>
+
+			<div class="cart-summary">
+				<div class="summary-row">
+					<span>Subtotal:</span>
+					<span id="subtotal">${{calculateTotal cart.products}}</span>
+				</div>
+				<div class="summary-row summary-total">
+					<span>Total:</span>
+					<span id="total">${{calculateTotal cart.products}}</span>
+				</div>
+			</div>
+		{{else}}
+			<div class="empty-cart">
+				<p>Tu carrito está vacío</p>
+				<a href="/products" class="btn btn-primary" style="margin-top: 20px; display: inline-block;">Ir a Productos</a>
+			</div>
+		{{/if}}
+	</div>
+
+	<script>
+		async function updateQuantity(productId, quantity) {
+			if (quantity < 1) {
+				alert('La cantidad debe ser mayor a 0');
+				location.reload();
+				return;
+			}
+
+			const cartId = '{{cart._id}}';
+			try {
+				const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({ quantity: parseInt(quantity) })
+				});
+
+				if (response.ok) {
+					location.reload();
+				} else {
+					alert('Error al actualizar la cantidad');
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				alert('Error al actualizar la cantidad');
+			}
+		}
+
+		async function removeProduct(productId) {
+			if (!confirm('¿Estás seguro de que deseas eliminar este producto del carrito?')) {
+				return;
+			}
+
+			const cartId = '{{cart._id}}';
+			try {
+				const response = await fetch(`/api/carts/${cartId}/products/${productId}`, {
+					method: 'DELETE'
+				});
+
+				if (response.ok) {
+					location.reload();
+				} else {
+					alert('Error al eliminar el producto');
+				}
+			} catch (error) {
+				console.error('Error:', error);
+				alert('Error al eliminar el producto');
+			}
+		}
+	</script>
+</body>
+</html>
+

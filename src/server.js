@@ -3,10 +3,14 @@ const path = require('path');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const exphbs = require('express-handlebars');
+const connectDB = require('./config/database');
 
 const productsRouter = require('./routes/products.router');
 const cartsRouter = require('./routes/carts.router');
 const viewsRouter = require('./routes/views.router');
+
+// Conectar a MongoDB
+connectDB();
 
 const app = express();
 const httpServer = createServer(app);
@@ -15,7 +19,25 @@ const io = new Server(httpServer);
 // Configurar Handlebars
 const hbs = exphbs.create({
 	defaultLayout: false,
-	extname: '.handlebars'
+	extname: '.handlebars',
+	helpers: {
+		eq: function(a, b) {
+			return a === b;
+		},
+		multiply: function(a, b) {
+			return (a * b).toFixed(2);
+		},
+		calculateTotal: function(products) {
+			if (!products || !Array.isArray(products)) return '0.00';
+			let total = 0;
+			products.forEach(item => {
+				if (item.product && item.product.price) {
+					total += item.product.price * item.quantity;
+				}
+			});
+			return total.toFixed(2);
+		}
+	}
 });
 app.engine('handlebars', hbs.engine);
 app.set('view engine', 'handlebars');
