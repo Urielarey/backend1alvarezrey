@@ -1,13 +1,19 @@
+// Cargar variables de entorno primero
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const exphbs = require('express-handlebars');
 const connectDB = require('./config/database');
+const passport = require('./config/passport.config');
 
 const productsRouter = require('./routes/products.router');
 const cartsRouter = require('./routes/carts.router');
 const viewsRouter = require('./routes/views.router');
+const usersRouter = require('./routes/users.router');
+const sessionsRouter = require('./routes/sessions.router');
 
 // Conectar a MongoDB
 connectDB();
@@ -48,6 +54,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Inicializar Passport
+app.use(passport.initialize());
+
 // Hacer io disponible en las rutas
 app.set('io', io);
 
@@ -55,6 +64,8 @@ app.set('io', io);
 app.use('/', viewsRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/carts', cartsRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/sessions', sessionsRouter);
 
 // Healthcheck
 app.get('/health', (req, res) => {
