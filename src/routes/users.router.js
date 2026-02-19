@@ -1,5 +1,5 @@
 const { Router } = require('express');
-const passport = require('passport');
+const { requireAdmin, authenticate } = require('../middlewares/authorization');
 const {
 	getUsers,
 	getUserById,
@@ -10,24 +10,19 @@ const {
 
 const router = Router();
 
-// Middleware de autenticación JWT (opcional, dependiendo de si quieres proteger todas las rutas)
-// const authenticateJWT = passport.authenticate('jwt', { session: false });
+// GET /api/users - Obtener todos los usuarios (requiere autenticación)
+router.get('/', authenticate, getUsers);
 
-// GET /api/users - Obtener todos los usuarios
-router.get('/', getUsers);
+// GET /api/users/:uid - Obtener un usuario por ID (requiere autenticación)
+router.get('/:uid', authenticate, getUserById);
 
-// GET /api/users/:uid - Obtener un usuario por ID
-router.get('/:uid', getUserById);
+// POST /api/users - Crear un nuevo usuario (solo admin)
+router.post('/', requireAdmin, createUser);
 
-// POST /api/users - Crear un nuevo usuario
-router.post('/', createUser);
+// PUT /api/users/:uid - Actualizar un usuario (solo admin)
+router.put('/:uid', requireAdmin, updateUser);
 
-// PUT /api/users/:uid - Actualizar un usuario
-router.put('/:uid', updateUser);
-
-// DELETE /api/users/:uid - Eliminar un usuario
-router.delete('/:uid', deleteUser);
+// DELETE /api/users/:uid - Eliminar un usuario (solo admin)
+router.delete('/:uid', requireAdmin, deleteUser);
 
 module.exports = router;
-
-

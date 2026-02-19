@@ -1,11 +1,14 @@
-const User = require('../models/User');
-const Cart = require('../models/Cart');
+const UserRepository = require('../repositories/UserRepository');
+const UserDTO = require('../dto/UserDTO');
+
+const userRepository = new UserRepository();
 
 // GET /api/users - Obtener todos los usuarios
 const getUsers = async (req, res, next) => {
 	try {
-		const users = await User.find().select('-password').populate('cart');
-		res.json({ status: 'success', payload: users });
+		const users = await userRepository.getUsers();
+		const usersDTO = users.map(user => UserDTO.fromUser(user).toJSON());
+		res.json({ status: 'success', payload: usersDTO });
 	} catch (error) {
 		next(error);
 	}
@@ -15,13 +18,14 @@ const getUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
 	try {
 		const { uid } = req.params;
-		const user = await User.findById(uid).select('-password').populate('cart');
+		const user = await userRepository.getUserById(uid);
 		
 		if (!user) {
 			return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
 		}
 		
-		res.json({ status: 'success', payload: user });
+		const userDTO = UserDTO.fromUser(user);
+		res.json({ status: 'success', payload: userDTO.toJSON() });
 	} catch (error) {
 		next(error);
 	}
@@ -40,39 +44,22 @@ const createUser = async (req, res, next) => {
 			});
 		}
 		
-		// Verificar si el usuario ya existe
-		const existingUser = await User.findOne({ email });
-		if (existingUser) {
-			return res.status(400).json({
-				status: 'error',
-				message: 'El email ya está registrado'
-			});
-		}
-		
-		// Crear un carrito vacío para el usuario
-		const cart = new Cart({ products: [] });
-		await cart.save();
-		
-		// Crear el usuario (la contraseña se encriptará automáticamente por el pre-save hook)
-		const user = new User({
+		// Crear usuario usando repository
+		const user = await userRepository.createUser({
 			first_name,
 			last_name,
 			email,
 			age,
-			password, // Se encriptará automáticamente
-			cart: cart._id,
+			password,
 			role: role || 'user'
 		});
 		
-		await user.save();
-		
-		// Retornar usuario sin contraseña
-		const userResponse = await User.findById(user._id).select('-password').populate('cart');
+		const userDTO = UserDTO.fromUser(user);
 		
 		res.status(201).json({
 			status: 'success',
 			message: 'Usuario creado exitosamente',
-			payload: userResponse
+			payload: userDTO.toJSON()
 		});
 	} catch (error) {
 		next(error);
@@ -85,43 +72,34 @@ const updateUser = async (req, res, next) => {
 		const { uid } = req.params;
 		const { first_name, last_name, email, age, password, role } = req.body;
 		
-		const user = await User.findById(uid);
+		const updateData = {};
+		if (first_name) updateData.first_name = first_name;
+		if (last_name) updateData.last_name = last_name;
+		if (email) updateData.email = email;
+		if (age !== undefined) updateData.age = age;
+		if (password) updateData.password = password;
+		if (role) updateData.role = role;
+		
+		const user = await userRepository.updateUser(uid, updateData);
 		
 		if (!user) {
 			return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
 		}
 		
-		// Actualizar campos si se proporcionan
-		if (first_name) user.first_name = first_name;
-		if (last_name) user.last_name = last_name;
-		if (email) {
-			// Verificar que el email no esté en uso por otro usuario
-			const existingUser = await User.findOne({ email, _id: { $ne: uid } });
-			if (existingUser) {
-				return res.status(400).json({
-					status: 'error',
-					message: 'El email ya está en uso por otro usuario'
-				});
-			}
-			user.email = email;
-		}
-		if (age !== undefined) user.age = age;
-		if (password) {
-			// Si se proporciona una nueva contraseña, se encriptará automáticamente
-			user.password = password;
-		}
-		if (role) user.role = role;
-		
-		await user.save();
-		
-		const userResponse = await User.findById(user._id).select('-password').populate('cart');
+		const userDTO = UserDTO.fromUser(user);
 		
 		res.json({
 			status: 'success',
 			message: 'Usuario actualizado exitosamente',
-			payload: userResponse
+			payload: userDTO.toJSON()
 		});
 	} catch (error) {
+		if (error.status === 400) {
+			return res.status(400).json({
+				status: 'error',
+				message: error.message
+			});
+		}
 		next(error);
 	}
 };
@@ -131,18 +109,11 @@ const deleteUser = async (req, res, next) => {
 	try {
 		const { uid } = req.params;
 		
-		const user = await User.findById(uid);
+		const deleted = await userRepository.deleteUser(uid);
 		
-		if (!user) {
+		if (!deleted) {
 			return res.status(404).json({ status: 'error', message: 'Usuario no encontrado' });
 		}
-		
-		// Eliminar el carrito asociado
-		if (user.cart) {
-			await Cart.findByIdAndDelete(user.cart);
-		}
-		
-		await User.findByIdAndDelete(uid);
 		
 		res.json({
 			status: 'success',
@@ -160,5 +131,3 @@ module.exports = {
 	updateUser,
 	deleteUser
 };
-
-

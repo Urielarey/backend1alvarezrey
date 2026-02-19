@@ -1,9 +1,11 @@
 const { Router } = require('express');
-const passport = require('passport');
+const { authenticate } = require('../middlewares/authorization');
 const {
 	register,
 	login,
-	getCurrentUser
+	getCurrentUser,
+	forgotPassword,
+	resetPassword
 } = require('../controllers/sessions.controller');
 
 const router = Router();
@@ -14,29 +16,13 @@ router.post('/register', register);
 // POST /api/sessions/login - Iniciar sesión
 router.post('/login', login);
 
+// POST /api/sessions/forgot-password - Solicitar recuperación de contraseña
+router.post('/forgot-password', forgotPassword);
+
+// POST /api/sessions/reset-password - Restablecer contraseña
+router.post('/reset-password', resetPassword);
+
 // GET /api/sessions/current - Obtener usuario actual (requiere autenticación)
-// Usa la estrategia "current" de Passport para validar el token JWT
-router.get('/current', 
-	(req, res, next) => {
-		passport.authenticate('current', { session: false }, (err, user, info) => {
-			if (err) {
-				return res.status(401).json({
-					status: 'error',
-					message: 'Token inválido o no proporcionado'
-				});
-			}
-			if (!user) {
-				return res.status(401).json({
-					status: 'error',
-					message: 'Token inválido o usuario no encontrado'
-				});
-			}
-			req.user = user;
-			next();
-		})(req, res, next);
-	},
-	getCurrentUser
-);
+router.get('/current', authenticate, getCurrentUser);
 
 module.exports = router;
-

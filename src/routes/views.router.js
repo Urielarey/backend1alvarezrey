@@ -1,15 +1,15 @@
 const { Router } = require('express');
-const ProductManager = require('../managers/ProductManager');
-const CartManager = require('../managers/CartManager');
+const ProductRepository = require('../repositories/ProductRepository');
+const CartRepository = require('../repositories/CartRepository');
 
 const router = Router();
-const productManager = new ProductManager();
-const cartManager = new CartManager();
+const productRepository = new ProductRepository();
+const cartRepository = new CartRepository();
 
 // GET /
 router.get('/', async (req, res, next) => {
 	try {
-		const result = await productManager.getProducts({ limit: 100, page: 1 });
+		const result = await productRepository.getProducts({ limit: 100, page: 1 });
 		res.render('home', { products: result.payload });
 	} catch (err) {
 		next(err);
@@ -19,7 +19,7 @@ router.get('/', async (req, res, next) => {
 // GET /realtimeproducts
 router.get('/realtimeproducts', async (req, res, next) => {
 	try {
-		const result = await productManager.getProducts({ limit: 100, page: 1 });
+		const result = await productRepository.getProducts({ limit: 100, page: 1 });
 		res.render('realTimeProducts', { products: result.payload });
 	} catch (err) {
 		next(err);
@@ -34,10 +34,10 @@ router.get('/products', async (req, res, next) => {
 			limit: limit ? parseInt(limit) : 10,
 			page: page ? parseInt(page) : 1,
 			sort: sort || null,
-			query: query || null
+			query: query || null,
+			isView: true
 		};
-		filters.isView = true;
-		const result = await productManager.getProducts(filters);
+		const result = await productRepository.getProducts(filters);
 		// Agregar los query params al objeto para la vista
 		result.limit = filters.limit;
 		result.sort = filters.sort;
@@ -52,7 +52,7 @@ router.get('/products', async (req, res, next) => {
 router.get('/products/:pid', async (req, res, next) => {
 	try {
 		const { pid } = req.params;
-		const product = await productManager.getProductById(pid);
+		const product = await productRepository.getProductById(pid);
 		if (!product) {
 			return res.status(404).render('error', { message: 'Producto no encontrado' });
 		}
@@ -66,7 +66,7 @@ router.get('/products/:pid', async (req, res, next) => {
 router.get('/carts/:cid', async (req, res, next) => {
 	try {
 		const { cid } = req.params;
-		const cart = await cartManager.getCartById(cid);
+		const cart = await cartRepository.getCartById(cid);
 		if (!cart) {
 			return res.status(404).render('error', { message: 'Carrito no encontrado' });
 		}
@@ -77,4 +77,3 @@ router.get('/carts/:cid', async (req, res, next) => {
 });
 
 module.exports = router;
-
